@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Controle de Ponto — Professores</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka+One&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F5F0EB;
+    --card: #FFFFFF;
+    --primary: #2D6A4F;
+    --primary-light: #40916C;
+    --primary-pale: #D8F3DC;
+    --accent: #E76F51;
+    --accent-light: #F4A261;
+    --text: #1B1B1B;
+    --text-soft: #5C5C5C;
+    --border: #D4C9BE;
+    --danger: #C1121F;
+    --danger-pale: #FDECEA;
+    --sunday: #FDECEA;
+    --holiday: #FFF3E0;
+    --shadow: 0 2px 16px rgba(0,0,0,0.07);
+    --radius: 16px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* SETUP BANNER */
+  .setup-banner {
+    background: var(--accent);
+    color: white;
+    padding: 20px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    display: none;
+  }
+  .setup-banner:hover { background: #d4603f; }
+  .setup-banner.show { display: block; }
+
+  .setup-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: rgba(0,0,0,0.5);
+    justify-content: center;
+    align-items: center;
+  }
+  .setup-modal.show { display: flex; }
+  .setup-box {
+    background: white;
+    border-radius: 20px;
+    padding: 32px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .setup-box h2 { color: var(--primary); margin-bottom: 12px; }
+  .setup-box p { margin-bottom: 12px; font-size: 0.95rem; color: var(--text-soft); }
+  .setup-box ol { padding-left: 20px; margin-bottom: 16px; }
+  .setup-box ol li { margin-bottom: 8px; font-size: 0.95rem; }
+  .setup-box code {
+    display: block;
+    background: #f4f4f4;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    word-break: break-all;
+    margin: 8px 0;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--primary);
+    color: white;
+    padding: 24px 20px 20px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(45,106,79,0.3);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header h1 { font-family: 'Fredoka One', cursive; font-size: 1.6rem; letter-spacing: 0.5px; }
+  .header p { font-size: 0.95rem; opacity: 0.85; margin-top: 2px; }
+
+  /* TABS */
+  .nav-tabs {
+    display: flex;
+    background: var(--card);
+    border-bottom: 3px solid var(--border);
+    position: sticky;
+    top: 74px;
+    z-index: 99;
+  }
+  .nav-tab {
+    flex: 1;
+    padding: 14px 6px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--text-soft);
+    transition: all 0.2s;
+    border-bottom: 4px solid transparent;
+    font-family: 'Nunito', sans-serif;
+  }
+  .nav-tab.active { color: var(--primary); border-bottom-color: var(--primary); background: var(--primary-pale); }
+  .nav-tab .tab-icon { font-size: 1.3rem; display: block; margin-bottom: 1px; }
+
+  .container { max-width: 800px; margin: 0 auto; padding: 16px 14px 100px; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 22px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .card-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card-title .emoji { font-size: 1.4rem; }
+
+  /* FORM */
+  label { display: block; font-weight: 700; font-size: 1.1rem; margin-bottom: 6px; }
+  .hint { font-size: 0.88rem; color: var(--text-soft); margin-bottom: 6px; font-weight: 400; }
+
+  select, input[type="date"], input[type="number"], input[type="text"], textarea {
+    width: 100%;
+    padding: 18px;
+    font-size: 1.2rem;
+    font-family: 'Nunito', sans-serif;
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    background: #FAFAFA;
+    color: var(--text);
+    margin-bottom: 18px;
+    -webkit-appearance: none;
+  }
+  select:focus, input:focus, textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: white;
+    box-shadow: 0 0 0 4px var(--primary-pale);
+  }
+
+  /* BUTTONS */
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 20px 32px;
+    font-size: 1.25rem;
+    font-weight: 800;
+    font-family: 'Nunito', sans-serif;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    width: 100%;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 14px rgba(45,106,79,0.35); }
+  .btn-primary:hover:not(:disabled) { background: var(--primary-light); }
+  .btn-accent { background: var(--accent); color: white; }
+  .btn-small { padding: 12px 20px; font-size: 1rem; width: auto; border-radius: 10px; }
+  .btn-outline { background: white; color: var(--text-soft); border: 2px solid var(--border); }
+
+  /* LOADING SPINNER */
+  .spinner {
+    display: inline-block;
+    width: 22px; height: 22px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    background: var(--primary);
+    color: white;
+    padding: 32px 44px;
+    border-radius: 20px;
+    font-size: 1.2rem;
+    font-weight: 800;
+    text-align: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    max-width: 85%;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  .toast.error { background: var(--danger); }
+  .toast .toast-icon { font-size: 2.5rem; display: block; margin-bottom: 8px; }
+  .toast-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    z-index: 999; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+  }
+  .toast-overlay.show { opacity: 1; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 650px; }
+  th { background: var(--primary); color: white; font-weight: 700; padding: 11px 8px; text-align: center; font-size: 0.82rem; white-space: nowrap; }
+  td { padding: 10px 8px; text-align: center; border-bottom: 1px solid #EAEAEA; white-space: nowrap; }
+  tr:hover td { background: #F5F5F2; }
+  tr.sunday td { background: var(--sunday); }
+  tr.holiday td { background: var(--holiday); }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+  .badge-dom { background: #FECDD3; color: #9B1C1C; }
+  .badge-fer { background: #FED7AA; color: #9A3412; }
+
+  /* SUMMARY */
+  .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
+  .summary-card {
+    background: var(--card); border-radius: 14px; padding: 18px;
+    text-align: center; border: 1px solid var(--border); box-shadow: var(--shadow);
+  }
+  .summary-card .value { font-size: 1.8rem; font-weight: 900; color: var(--primary); font-family: 'Fredoka One', cursive; }
+  .summary-card .label { font-size: 0.85rem; color: var(--text-soft); font-weight: 600; margin-top: 2px; }
+  .summary-card.highlight { background: var(--primary); border-color: var(--primary); }
+  .summary-card.highlight .value { color: white; font-size: 1.5rem; }
+  .summary-card.highlight .label { color: rgba(255,255,255,0.8); }
+
+  .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .filter-row select { flex: 1; min-width: 120px; margin-bottom: 0; padding: 12px; font-size: 0.95rem; }
+
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--text-soft); }
+  .empty-state .emoji { font-size: 2.5rem; display: block; margin-bottom: 10px; }
+  .empty-state p { font-size: 1.05rem; font-weight: 600; }
+
+  /* STATUS DOT */
+  .status-dot {
+    display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px;
+  }
+  .status-dot.online { background: #22C55E; }
+  .status-dot.offline { background: var(--danger); }
+
+  /* LAST REGISTROS */
+  .reg-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 0; border-bottom: 1px solid #eee;
+  }
+  .reg-item:last-child { border-bottom: none; }
+
+  @media (max-width: 500px) {
+    .summary-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 1.3rem; }
+    .container { padding: 12px 10px 100px; }
+    select, input[type="date"] { font-size: 1.1rem; padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SETUP BANNER -->
+<div class="setup-banner show" id="setup-banner" onclick="openSetup()">
+  ⚙️ Clique aqui para configurar a URL do Google Sheets (necessário uma única vez)
+</div>
+
+<!-- SETUP MODAL -->
+<div class="setup-modal" id="setup-modal">
+  <div class="setup-box">
+    <h2>⚙️ Configuração Inicial</h2>
+    <p>Cole abaixo a URL do seu Google Apps Script (aquela que termina em <b>/exec</b>):</p>
+    <input type="text" id="setup-url" placeholder="https://script.google.com/macros/s/.../exec" style="font-size:0.95rem;padding:14px">
+    <button class="btn btn-primary" onclick="saveSetup()" style="margin-bottom:12px">✅ Salvar e Conectar</button>
+    <button class="btn btn-outline btn-small" onclick="closeSetup()">Cancelar</button>
+
+    <hr style="margin:20px 0;border:none;border-top:1px solid #eee">
+    <h3 style="font-size:1rem;color:var(--text-soft)">📖 Como obter a URL:</h3>
+    <ol>
+      <li>Abra <a href="https://script.google.com" target="_blank"><b>script.google.com</b></a></li>
+      <li>Crie um "Novo projeto"</li>
+      <li>Cole o código do arquivo <b>google_apps_script.js</b></li>
+      <li>Clique em <b>Executar</b> → selecione <b>setup</b> → autorize</li>
+      <li>Vá em <b>Implantar → Nova implantação</b></li>
+      <li>Tipo: <b>App da Web</b></li>
+      <li>Executar como: <b>Eu</b></li>
+      <li>Acesso: <b>Qualquer pessoa</b></li>
+      <li>Copie a URL gerada e cole acima</li>
+    </ol>
+  </div>
+</div>
+
+<div class="header">
+  <h1>📋 Controle de Ponto</h1>
+  <p>Registro de Aulas — Professores</p>
+</div>
+
+<div class="nav-tabs">
+  <button class="nav-tab active" onclick="showTab('registro')">
+    <span class="tab-icon">✏️</span> Registrar
+  </button>
+  <button class="nav-tab" onclick="showTab('controle')">
+    <span class="tab-icon">📊</span> Controle
+  </button>
+</div>
+
+<div class="container">
+
+  <!-- ==================== REGISTRO ==================== -->
+  <div id="tab-registro" class="section active">
+
+    <div class="card" id="connection-card">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text" style="font-weight:700;font-size:0.95rem">Verificando conexão...</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="emoji">👨‍🏫</span> Registrar Aula</div>
+
+      <label>Quem é você?</label>
+      <p class="hint">Selecione seu nome na lista abaixo</p>
+      <select id="reg-prof"><option value="">Carregando...</option></select>
+
+      <label>📅 Data da aula</label>
+      <p class="hint">Selecione o dia que a aula foi dada</p>
+      <input type="date" id="reg-date">
+
+      <div id="date-alert" style="display:none;background:var(--holiday);border-radius:10px;padding:12px 16px;margin:-10px 0 16px;font-weight:700;font-size:0.95rem"></div>
+
+      <label>📚 Qual turma?</label>
+      <p class="hint">Selecione a turma desta aula</p>
+      <select id="reg-turma"><option value="">Carregando...</option></select>
+
+      <div id="turma-valor" style="display:none;background:var(--primary-pale);border-radius:10px;padding:12px 16px;margin:-10px 0 16px;font-weight:700;color:var(--primary)"></div>
+
+      <label>📎 Observação <span style="font-weight:400;color:var(--text-soft);font-size:0.9rem">(opcional)</span></label>
+      <p class="hint">Reposição, substituição ou outro comentário</p>
+      <textarea id="reg-obs" rows="2" placeholder="Ex: Reposição da aula do dia 05/06"></textarea>
+
+      <button class="btn btn-primary" id="btn-registrar" onclick="registrarAula()">
+        ✅ Registrar Aula
+      </button>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="emoji">🕐</span> Últimos Registros</div>
+      <div id="ultimos-registros">
+        <div class="empty-state"><span class="emoji">📝</span><p>Carregando registros...</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== CONTROLE ==================== -->
+  <div id="tab-controle" class="section">
+    <div id="summary-cards" class="summary-grid"></div>
+
+    <div class="card">
+      <div class="card-title"><span class="emoji">🔍</span> Filtros</div>
+      <div class="filter-row">
+        <select id="filter-prof" onchange="renderControle()"><option value="">Todos</option></select>
+        <select id="filter-mes" onchange="renderControle()"><option value="">Todos os Meses</option></select>
+        <select id="filter-turma" onchange="renderControle()"><option value="">Todas Turmas</option></select>
+      </div>
+      <button class="btn btn-outline btn-small" onclick="loadRegistros()" style="margin-top:8px">🔄 Atualizar dados</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="emoji">📋</span> Registros</div>
+      <div id="tabela-controle">
+        <div class="empty-state"><span class="emoji">📊</span><p>Carregando...</p></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="emoji">💾</span> Exportar</div>
+      <button class="btn btn-primary btn-small" onclick="exportCSV()">📥 Baixar Planilha CSV</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-overlay" id="toast-overlay"></div>
+<div class="toast" id="toast">
+  <span class="toast-icon" id="toast-icon">✅</span>
+  <span id="toast-msg">Aula registrada!</span>
+</div>
+
+<script>
+// ===== CONFIG =====
+const STORAGE_KEY = 'ponto_api_url';
+let API_URL = localStorage.getItem(STORAGE_KEY) || '';
+let CONFIG = { professores: [], turmas: [], feriados: [] };
+let REGISTROS = [];
+
+// ===== SETUP =====
+function openSetup() {
+  document.getElementById('setup-modal').classList.add('show');
+  document.getElementById('setup-url').value = API_URL;
+}
+function closeSetup() { document.getElementById('setup-modal').classList.remove('show'); }
+
+async function saveSetup() {
+  const url = document.getElementById('setup-url').value.trim();
+  if (!url || !url.includes('script.google.com')) {
+    showToast('URL inválida! Deve ser do Google Apps Script', '⚠️', true);
+    return;
+  }
+  API_URL = url;
+  localStorage.setItem(STORAGE_KEY, url);
+  closeSetup();
+  showToast('Conectando...', '⏳');
+  await init();
+}
+
+function checkSetupBanner() {
+  const banner = document.getElementById('setup-banner');
+  banner.classList.toggle('show', !API_URL);
+}
+
+// ===== API CALLS =====
+async function apiCall(action, data = {}) {
+  if (!API_URL) throw new Error('API não configurada');
+  const resp = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action, ...data }),
+    mode: 'no-cors'
+  });
+  // no-cors returns opaque response, so we use GET for reads
+  return null;
+}
+
+async function apiGet(action) {
+  if (!API_URL) throw new Error('API não configurada');
+  const url = API_URL + '?action=' + action + '&t=' + Date.now();
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error('Erro na requisição');
+  return await resp.json();
+}
+
+async function apiPost(action, data = {}) {
+  if (!API_URL) throw new Error('API não configurada');
+  // For POST we use no-cors mode (Apps Script redirect limitation)
+  // So we send data as URL params via GET for writes too... 
+  // Actually, the best approach with Apps Script is to use fetch with redirect:follow
+  const resp = await fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action, ...data }),
+    headers: { 'Content-Type': 'text/plain' },
+    redirect: 'follow'
+  });
+  const text = await resp.text();
+  try { return JSON.parse(text); }
+  catch { return { success: true }; }
+}
+
+// ===== INIT =====
+async function init() {
+  checkSetupBanner();
+  if (!API_URL) {
+    setStatus(false, 'Configure a URL do Google Sheets acima');
+    return;
+  }
+
+  try {
+    setStatus(null, 'Conectando...');
+    const cfg = await apiGet('getConfig');
+    if (cfg.success) {
+      CONFIG = cfg;
+      setStatus(true, 'Conectado ao Google Sheets');
+      populateForm();
+      await loadRegistros();
+    } else {
+      setStatus(false, 'Erro ao carregar: ' + (cfg.message || ''));
+    }
+  } catch (err) {
+    setStatus(false, 'Sem conexão — verifique a URL');
+    console.error(err);
+  }
+}
+
+function setStatus(online, text) {
+  const dot = document.getElementById('status-dot');
+  const txt = document.getElementById('status-text');
+  dot.className = 'status-dot ' + (online === true ? 'online' : online === false ? 'offline' : '');
+  txt.textContent = text;
+}
+
+function populateForm() {
+  const profSel = document.getElementById('reg-prof');
+  profSel.innerHTML = '<option value="">— Selecione seu nome —</option>';
+  CONFIG.professores.forEach(p => {
+    profSel.innerHTML += `<option value="${esc(p)}">${esc(p)}</option>`;
+  });
+
+  const turmaSel = document.getElementById('reg-turma');
+  turmaSel.innerHTML = '<option value="">— Selecione a turma —</option>';
+  CONFIG.turmas.forEach(t => {
+    turmaSel.innerHTML += `<option value="${esc(t.name)}" data-valor="${t.valor}">${esc(t.name)} (R$ ${t.valor.toFixed(2).replace('.',',')})</option>`;
+  });
+
+  document.getElementById('reg-date').value = todayISO();
+
+  // Filter dropdowns
+  const fp = document.getElementById('filter-prof');
+  fp.innerHTML = '<option value="">Todos os Professores</option>';
+  CONFIG.professores.forEach(p => fp.innerHTML += `<option value="${esc(p)}">${esc(p)}</option>`);
+
+  const ft = document.getElementById('filter-turma');
+  ft.innerHTML = '<option value="">Todas as Turmas</option>';
+  CONFIG.turmas.forEach(t => ft.innerHTML += `<option value="${esc(t.name)}">${esc(t.name)}</option>`);
+
+  checkDateAlerts();
+}
+
+async function loadRegistros() {
+  try {
+    const res = await apiGet('getRegistros');
+    if (res.success) {
+      REGISTROS = res.registros || [];
+      REGISTROS.reverse(); // newest first
+      renderUltimos();
+      renderControle();
+    }
+  } catch (err) {
+    console.error('Erro ao carregar registros:', err);
+  }
+}
+
+// ===== REGISTRAR =====
+async function registrarAula() {
+  const prof = document.getElementById('reg-prof').value;
+  const date = document.getElementById('reg-date').value;
+  const turmaSelect = document.getElementById('reg-turma');
+  const turma = turmaSelect.value;
+  const obs = document.getElementById('reg-obs').value.trim();
+
+  if (!prof) { showToast('Selecione seu nome!', '⚠️', true); return; }
+  if (!date) { showToast('Selecione a data!', '⚠️', true); return; }
+  if (!turma) { showToast('Selecione a turma!', '⚠️', true); return; }
+
+  const valor = parseFloat(turmaSelect.selectedOptions[0].dataset.valor) || 0;
+  const dateObj = new Date(date + 'T12:00:00');
+  const dias = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
+  const diaSemana = dias[dateObj.getDay()];
+  const dateFmt = formatDateBR(date);
+
+  let tipoDia = 'Normal';
+  if (dateObj.getDay() === 0) tipoDia = 'Domingo';
+  else if (isFeriado(date)) tipoDia = 'Feriado';
+
+  // Check duplicate
+  const dup = REGISTROS.find(r => r.professor === prof && r.data === dateFmt && r.turma === turma);
+  if (dup) {
+    showToast('Essa aula já foi registrada!', '⚠️', true);
+    return;
+  }
+
+  const btn = document.getElementById('btn-registrar');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Enviando...';
+
+  try {
+    await apiPost('registro', {
+      professor: prof,
+      data: dateFmt,
+      diaSemana,
+      turma,
+      valor,
+      tipoDia,
+      observacao: obs
+    });
+
+    // Add to local list
+    REGISTROS.unshift({
+      timestamp: new Date().toLocaleString('pt-BR'),
+      professor: prof,
+      data: dateFmt,
+      diaSemana,
+      turma,
+      valor,
+      tipoDia,
+      observacao: obs
+    });
+
+    document.getElementById('reg-obs').value = '';
+    showToast('Aula registrada com sucesso!', '✅');
+    renderUltimos();
+  } catch (err) {
+    showToast('Erro ao enviar. Tente novamente.', '❌', true);
+    console.error(err);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '✅ Registrar Aula';
+  }
+}
+
+// ===== RENDERS =====
+function renderUltimos() {
+  const div = document.getElementById('ultimos-registros');
+  const last7 = REGISTROS.slice(0, 7);
+  if (last7.length === 0) {
+    div.innerHTML = '<div class="empty-state"><span class="emoji">📝</span><p>Nenhuma aula registrada ainda</p></div>';
+    return;
+  }
+  div.innerHTML = last7.map(r => {
+    const badge = r.tipoDia === 'Domingo' ? ' 🔴' : r.tipoDia === 'Feriado' ? ' 🟠' : '';
+    return `<div class="reg-item">
+      <div>
+        <strong style="font-size:1.05rem">${esc(r.professor)}</strong><br>
+        <span style="color:var(--text-soft);font-size:0.92rem">${r.data} ${r.diaSemana}${badge} — ${esc(r.turma)}</span>
+        ${r.observacao ? `<br><em style="font-size:0.85rem;color:var(--text-soft)">📎 ${esc(r.observacao)}</em>` : ''}
+      </div>
+      <strong style="color:var(--primary);font-size:1.05rem;white-space:nowrap">R$ ${r.valor.toFixed(2).replace('.',',')}</strong>
+    </div>`;
+  }).join('');
+}
+
+function renderControle() {
+  const fp = document.getElementById('filter-prof').value;
+  const fm = document.getElementById('filter-mes').value;
+  const ft = document.getElementById('filter-turma').value;
+
+  // Populate month filter
+  const meses = [...new Set(REGISTROS.map(r => {
+    const parts = r.data.split('/');
+    return parts.length === 3 ? parts[1] + '/' + parts[2] : '';
+  }))].filter(Boolean).sort().reverse();
+
+  const fmSel = document.getElementById('filter-mes');
+  const currentFm = fmSel.value;
+  fmSel.innerHTML = '<option value="">Todos os Meses</option>';
+  meses.forEach(m => fmSel.innerHTML += `<option value="${m}" ${m===currentFm?'selected':''}>${m}</option>`);
+
+  let filtered = [...REGISTROS];
+  if (fp) filtered = filtered.filter(r => r.professor === fp);
+  if (ft) filtered = filtered.filter(r => r.turma === ft);
+  if (fm) filtered = filtered.filter(r => {
+    const parts = r.data.split('/');
+    return parts.length === 3 && (parts[1] + '/' + parts[2]) === fm;
+  });
+
+  const totalAulas = filtered.length;
+  const totalValor = filtered.reduce((s,r) => s + (r.valor || 0), 0);
+  const totalProfs = new Set(filtered.map(r => r.professor)).size;
+
+  document.getElementById('summary-cards').innerHTML = `
+    <div class="summary-card highlight">
+      <div class="value">R$ ${totalValor.toFixed(2).replace('.',',')}</div>
+      <div class="label">Valor Total</div>
+    </div>
+    <div class="summary-card">
+      <div class="value">${totalAulas}</div>
+      <div class="label">Aulas</div>
+    </div>
+  `;
+
+  const tableDiv = document.getElementById('tabela-controle');
+  if (filtered.length === 0) {
+    tableDiv.innerHTML = '<div class="empty-state"><span class="emoji">📊</span><p>Nenhum registro</p></div>';
+    return;
+  }
+
+  let html = `<div class="table-wrap"><table>
+    <thead><tr><th>Data</th><th>Dia</th><th>Professor</th><th>Turma</th><th>Valor</th><th>Obs</th></tr></thead><tbody>`;
+
+  filtered.forEach(r => {
+    const cls = r.tipoDia === 'Domingo' ? 'sunday' : r.tipoDia === 'Feriado' ? 'holiday' : '';
+    const badge = r.tipoDia === 'Domingo' ? '<span class="badge badge-dom">DOM</span>' :
+                  r.tipoDia === 'Feriado' ? '<span class="badge badge-fer">FER</span>' : '';
+    html += `<tr class="${cls}">
+      <td>${r.data}</td>
+      <td>${r.diaSemana} ${badge}</td>
+      <td style="text-align:left">${esc(r.professor)}</td>
+      <td>${esc(r.turma)}</td>
+      <td><b>R$ ${(r.valor||0).toFixed(2).replace('.',',')}</b></td>
+      <td style="text-align:left;font-size:0.8rem;max-width:100px;overflow:hidden;text-overflow:ellipsis">${esc(r.observacao||'—')}</td>
+    </tr>`;
+  });
+  html += '</tbody></table></div>';
+
+  // Breakdown por turma
+  const byTurma = {};
+  filtered.forEach(r => {
+    if (!byTurma[r.turma]) byTurma[r.turma] = { count: 0, total: 0 };
+    byTurma[r.turma].count++;
+    byTurma[r.turma].total += (r.valor || 0);
+  });
+
+  html += '<div style="margin-top:14px"><strong>Por Turma:</strong></div>';
+  for (const [turma, info] of Object.entries(byTurma)) {
+    html += `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee">
+      <span><b>${esc(turma)}</b> — ${info.count} aulas</span>
+      <b style="color:var(--primary)">R$ ${info.total.toFixed(2).replace('.',',')}</b>
+    </div>`;
+  }
+
+  // Breakdown por professor
+  const byProf = {};
+  filtered.forEach(r => {
+    if (!byProf[r.professor]) byProf[r.professor] = { count: 0, total: 0 };
+    byProf[r.professor].count++;
+    byProf[r.professor].total += (r.valor || 0);
+  });
+
+  if (Object.keys(byProf).length > 1) {
+    html += '<div style="margin-top:14px"><strong>Por Professor:</strong></div>';
+    for (const [prof, info] of Object.entries(byProf)) {
+      html += `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee">
+        <span><b>${esc(prof)}</b> — ${info.count} aulas</span>
+        <b style="color:var(--primary)">R$ ${info.total.toFixed(2).replace('.',',')}</b>
+      </div>`;
+    }
+  }
+
+  tableDiv.innerHTML = html;
+}
+
+// ===== DATE ALERTS =====
+function checkDateAlerts() {
+  const dateInput = document.getElementById('reg-date');
+  dateInput.addEventListener('change', function() {
+    const alert = document.getElementById('date-alert');
+    const d = new Date(this.value + 'T12:00:00');
+    if (d.getDay() === 0) {
+      alert.style.display = 'block';
+      alert.style.background = 'var(--sunday)';
+      alert.innerHTML = '🔴 Atenção: Este dia é um <b>DOMINGO</b>!';
+    } else if (isFeriado(this.value)) {
+      alert.style.display = 'block';
+      alert.style.background = 'var(--holiday)';
+      const name = getFeriadoName(this.value);
+      alert.innerHTML = `🟠 Atenção: Este dia é <b>FERIADO</b>${name ? ' — ' + name : ''}!`;
+    } else {
+      alert.style.display = 'none';
+    }
+  });
+
+  const turmaSelect = document.getElementById('reg-turma');
+  turmaSelect.addEventListener('change', function() {
+    const valorDiv = document.getElementById('turma-valor');
+    if (this.value) {
+      const valor = parseFloat(this.selectedOptions[0].dataset.valor) || 0;
+      valorDiv.style.display = 'block';
+      valorDiv.innerHTML = `💰 Valor desta aula: <b>R$ ${valor.toFixed(2).replace('.',',')}</b>`;
+    } else {
+      valorDiv.style.display = 'none';
+    }
+  });
+}
+
+// ===== EXPORT CSV =====
+function exportCSV() {
+  if (REGISTROS.length === 0) { showToast('Sem registros!', '⚠️', true); return; }
+  const fp = document.getElementById('filter-prof').value;
+  const fm = document.getElementById('filter-mes').value;
+  const ft = document.getElementById('filter-turma').value;
+
+  let data = [...REGISTROS];
+  if (fp) data = data.filter(r => r.professor === fp);
+  if (ft) data = data.filter(r => r.turma === ft);
+  if (fm) data = data.filter(r => {
+    const parts = r.data.split('/');
+    return parts.length === 3 && (parts[1] + '/' + parts[2]) === fm;
+  });
+
+  let csv = '\uFEFFData,Dia da Semana,Professor,Turma,Valor,Tipo do Dia,Observação\n';
+  data.forEach(r => {
+    csv += `${r.data},${r.diaSemana},"${r.professor}","${r.turma}",${(r.valor||0).toFixed(2)},${r.tipoDia},"${r.observacao||''}"\n`;
+  });
+  downloadFile(csv, 'controle_ponto.csv', 'text/csv;charset=utf-8');
+}
+
+// ===== HELPERS =====
+function todayISO() { return new Date().toISOString().slice(0, 10); }
+function formatDateBR(iso) {
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+function isFeriado(iso) {
+  const br = formatDateBR(iso);
+  return CONFIG.feriados.some(f => f.date === br);
+}
+function getFeriadoName(iso) {
+  const br = formatDateBR(iso);
+  const f = CONFIG.feriados.find(f => f.date === br);
+  return f ? f.name : '';
+}
+function esc(s) {
+  if (!s) return '';
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+function downloadFile(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+
+// ===== TABS =====
+function showTab(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  const idx = ['registro','controle'].indexOf(name);
+  document.querySelectorAll('.nav-tab')[idx].classList.add('active');
+  if (name === 'controle') { loadRegistros(); }
+}
+
+// ===== TOAST =====
+function showToast(msg, icon = '✅', isError = false) {
+  const t = document.getElementById('toast');
+  const o = document.getElementById('toast-overlay');
+  document.getElementById('toast-msg').textContent = msg;
+  document.getElementById('toast-icon').textContent = icon;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  o.classList.add('show');
+  setTimeout(() => { t.classList.remove('show'); o.classList.remove('show'); t.className = 'toast'; }, 2000);
+}
+
+// ===== START =====
+init();
+</script>
+</body>
+</html>
